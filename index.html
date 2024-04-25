@@ -6,72 +6,72 @@
     <title>Example1</title>
 
     <script id="vertex-shader" type="x-shader/x-vertex">
-attribute vec4 vPosition;
-
-void
-main()
-{
-    gl_PointSize = 10.0;
-    gl_Position = vPosition;
-}
-</script>
+        attribute vec4 vPosition;
+        uniform mat4 modelMatrix;
+        uniform mat4 projectionMatrix;
+        uniform mat4 viewMatrix;
+        uniform mat4 translationMatrix;
+        uniform mat4 initialScaleMatrix;
+        
+        void main()
+        {
+            gl_Position =  projectionMatrix * viewMatrix * translationMatrix * initialScaleMatrix * modelMatrix * vPosition;
+        }
+    </script>
 
     <script id="fragment-shader" type="x-shader/x-fragment">
 
 void
 main()
 {
-    gl_FragColor = vec4( 0.0, 1.0, 0.0, 1.0 );
+    gl_FragColor = vec4( 0.06640625, 0.24609375, 0.80859375, 1.0 );
 }
 </script>
 
     <script type="text/javascript" src="./Common/webgl-utils.js"></script>
     <script type="text/javascript" src="./Common/initShaders.js"></script>
     <script type="text/javascript" src="./Common/MV.js"></script>
-
-    <script type="text/javascript" src="index.js"></script>
+    <script type="text/javascript" src="./index.js"></script>
 </head>
 
 <body>
-    <span>
-        <canvas id="gl-canvas" width="1024" height="1024">
-            Oops ... your browser doesn't support the HTML5 canvas element
-        </canvas>
-    </span>
-    <!--
+    <canvas id="gl-canvas" width="1024" height="1024">
+        Oops ... your browser doesn't support the HTML5 canvas element
+    </canvas>
     <div>
-        <label for="M_scale">M의 크기 조절: </label>
-        <input type="range" id="M_scale" min="-100" max="100" value="0">
-        <label for="M_offset">M의 위치 조절: </label>
-        <input type="range" id="M_offset" min="-100" max="100" value="0">
+        <div>
+            <button id="toggleRot">
+                Toggle Rotation
+            </button>
+            <button id="rotX">
+                Change Rotation direction about X axis
+            </button>
+            <button id="rotY">
+                Change Rotation direction about Y axis
+            </button>
+            <button id="rotZ">
+                Change Rotation direction about Z axis
+            </button>
+        </div>
+        <div>
+            <div>
+                <label for="initial_height">이니셜 전체 높이 조절: </label>
+                <input type="range" id="initial_height" min="0" max="500" value="0">
+            </div>
+            <div>
+                <label for="initial_posx">이니셜 좌우 이동: </label>
+                <input type="range" id="initial_posx" min="0" max="200" value="0">
+            </div>
+            <div>
+                <label for="initial_scailing">이니셜 스케일링: </label>
+                <input type="range" id="initial_scailing" min="1" max="8" value="1">
+            </div>
+            <div>
+                <label for="initial_distance_z">distanceZ(camera distance): </label>
+                <input type="range" id="initial_distance_z" min="1" max="48" value="48">
+            </div>
+        </div>
     </div>
-    <div>
-        <label for="J_scale">J의 크기 조절: </label>
-        <input type="range" id="J_scale" min="-100" max="100" value="0">
-    </div>
-    <div>
-        <label for="J_offset">J의 위치 조절: </label>
-        <input type="range" id="J_offset" min="-100" max="100" value="0">
-    </div>
-    <div>
-        <label for="C_scale">C의 크기 조절: </label>
-        <input type="range" id="C_scale" min="-100" max="100" value="0">
-    </div>
-    <div>
-        <label for="C_offset">C의 위치 조절: </label>
-        <input type="range" id="C_offset" min="-100" max="100" value="0">
-    </div>
-    -->
-    <div>
-        <label for="initial_height">이니셜 전체 높이 조절: </label>
-        <input type="range" id="initial_height" min="0" max="500" value="0">
-    </div>
-    <!--
-    <div>
-        <label for="initial_scale">이니셜 전체 크기 조절: </label>
-        <input type="range" id="initial_scale" min="-500" max="500" value="0">
-    </div>
-    -->
 </body>
 
 </html>

@@ -1,280 +1,461 @@
 "use strict";
 
-function scale_coordinates(coordinates, scale) {
-  return coordinates.map(function (coordinate) {
-    return [coordinate[0] * scale, coordinate[1] * scale];
-  });
-}
-
-function translate_coordinates(coordinates, offset) {
-  return coordinates.map(function (coordinate) {
-    return [coordinate[0] + offset, coordinate[1]];
-  });
-}
-
-function modify_height_coordinates(coordinates, height) {
-  return coordinates.map(function (coordinate) {
-    return [coordinate[0], coordinate[1] + height];
-  });
-}
-
-var M_scale_slider;
-var M_offset_slider;
-var J_scale_slider;
-var J_offset_slider;
-var C_scale_slider;
-var C_offset_slider;
-var initial_height_slider;
-// var initial_scale_slider;
-var bufferId;
-
-var coordinates = {
-  // object M, J, C. 1024x1024 에서의 좌표.
-  M: [
-    // M의 첫번째 일직선 작대기
-    [102.4, 256.0],
-    [102.4, 768.0],
-    [153.46, 256.0],
-    [102.4, 768.0],
-    [153.46, 768.0],
-    [153.46, 256.0],
-    // M의 첫번째 대각선 작대기
-    [358.4, 256.0],
-    [102.4, 768.0],
-    [307.2, 256.0],
-    [153.46, 768.0],
-    [102.4, 768.0],
-    [358.4, 256.0],
-    // M의 두번째 대각선 작대기
-    [358.4, 256.0],
-    [512.0, 768.0],
-    [307.2, 256.0],
-    [512.0, 768.0],
-    [460.8, 768.0],
-    [307.2, 256.0],
-    // M의 두번째 일직선 작대기
-    [460.8, 256.0],
-    [460.8, 768.0],
-    [512.0, 256.0],
-    [460.8, 768.0],
-    [512.0, 768.0],
-    [512.0, 256.0],
-  ],
-  J: [
-    // J의 작대기
-    [102.4, 665.6],
-    [102.4, 280.0],
-    [153.46, 665.6],
-    [102.4, 280.0],
-    [153.46, 280.0],
-    [153.46, 665.6],
-    // J의 곡선
-    [153.6, 358.4],
-    [128.0, 307.2],
-    [102.4, 281.6],
-    [76.8, 307.2],
-    [51.2, 332.8],
-    [25.6, 358.4],
-  ],
-  C: [
-    // C 상단
-    [665.6, 358.4],
-    [435.2, 384.0],
-    [358.4, 512.0],
-    // C 중간
-    [435.2, 384.0],
-    [358.4, 512.0],
-    [435.2, 640.0],
-    // C 하단
-    [358.4, 512.0],
-    [435.2, 640.0],
-    [665.6, 665.6],
-  ],
-  line: [
-    [20, 20],
-    [980, 20],
-    [980, 980],
-    [20, 980],
-  ],
-  dot: [
-    [20, 20],
-    [980, 20],
-    [980, 980],
-    [20, 980],
-  ],
-};
-
-var displayed_coordinates = JSON.parse(JSON.stringify(coordinates));
-
-let display_scale = 1.0;
-let display_height = 300;
-
-let M_scale = 0.4;
-let J_scale = 0.5;
-let C_scale = 0.5;
-
-let M_offset = 0;
-let J_offset = 400;
-let C_offset = 500;
-
-displayed_coordinates["M"] = scale_coordinates(
-  displayed_coordinates["M"],
-  M_scale
-);
-displayed_coordinates["J"] = scale_coordinates(
-  displayed_coordinates["J"],
-  J_scale
-);
-displayed_coordinates["C"] = scale_coordinates(
-  displayed_coordinates["C"],
-  C_scale
-);
-
-displayed_coordinates["M"] = translate_coordinates(
-  displayed_coordinates["M"],
-  M_offset
-);
-displayed_coordinates["J"] = translate_coordinates(
-  displayed_coordinates["J"],
-  J_offset
-);
-displayed_coordinates["C"] = translate_coordinates(
-  displayed_coordinates["C"],
-  C_offset
-);
-
-displayed_coordinates["M"] = modify_height_coordinates(
-  displayed_coordinates["M"],
-  display_height
-);
-displayed_coordinates["J"] = modify_height_coordinates(
-  displayed_coordinates["J"],
-  display_height
-);
-displayed_coordinates["C"] = modify_height_coordinates(
-  displayed_coordinates["C"],
-  display_height
-);
-
-function updateAndRender() {
-  displayed_coordinates["M"] = scale_coordinates(coordinates["M"], M_scale);
-  displayed_coordinates["J"] = scale_coordinates(coordinates["J"], J_scale);
-  displayed_coordinates["C"] = scale_coordinates(coordinates["C"], C_scale);
-
-  displayed_coordinates["M"] = translate_coordinates(
-    displayed_coordinates["M"],
-    M_offset
-  );
-  displayed_coordinates["J"] = translate_coordinates(
-    displayed_coordinates["J"],
-    J_offset
-  );
-  displayed_coordinates["C"] = translate_coordinates(
-    displayed_coordinates["C"],
-    C_offset
-  );
-
-  displayed_coordinates["M"] = modify_height_coordinates(
-    displayed_coordinates["M"],
-    display_height
-  );
-  displayed_coordinates["J"] = modify_height_coordinates(
-    displayed_coordinates["J"],
-    display_height
-  );
-  displayed_coordinates["C"] = modify_height_coordinates(
-    displayed_coordinates["C"],
-    display_height
-  );
-
-  // WebGL 렌더링 준비
-  var vertices = [];
-  for (var key in displayed_coordinates) {
-    if (displayed_coordinates.hasOwnProperty(key)) {
-      for (var i = 0; i < displayed_coordinates[key].length; i++) {
-        vertices.push(displayed_coordinates[key][i][0] / 512.0 - 1.0); // X 좌표 조정
-        vertices.push(displayed_coordinates[key][i][1] / 512.0 - 1.0); // Y 좌표 조정
-      }
-    }
-  }
-
-  // WebGL 버퍼 업데이트
-  gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
-  gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
-
-  // 다시 렌더링
-  render();
-}
-
 var gl;
+var theta = [0, 0, 0];
+var xAxis = 0;
+var yAxis = 1;
+var zAxis = 2;
+var axis = yAxis; // 초기 회전 축
+var modelMatrix, viewMatrix, projectionMatrix;
+var modelMatrixLoc, viewMatrixLOC, projectionMatrixLoc;
 
-window.onload = function init() {
-  initial_height_slider = document.getElementById("initial_height");
-  // initial_scale_slider = document.getElementById("initial_scale");
+var thetaLoc;
+var vertices;
+const origin_speed = 2;
+var rotationSpeed = origin_speed;
+var translationMatrix = translate(0, 0, 0);
+var translationMatrixLOC;
+var canvas;
+var cameraZ = 3.5; // 초기 카메라 z 위치
 
-  function update_height(event) {
-    display_height = parseInt(event.target.value);
-    updateAndRender();
-  }
+var translateX = 0;
+var translateY = 0;
+var initialScale = 1;
+var initialScaleMatrix;
+var initialScaleMatrixLoc;
 
-  function update_scale(event) {
-    display_scale = parseInt(event.target.value);
-    updateAndRender();
-  }
+window.onload = function init()
+{
+    canvas = document.getElementById( "gl-canvas" );
 
-  initial_height_slider.addEventListener("input", update_height);
-  // initial_scale_slider.addEventListener("input", update_scale);
+    gl = WebGLUtils.setupWebGL( canvas );
+    if ( !gl ) { alert( "WebGL isn't available" ); }
 
-  var canvas = document.getElementById("gl-canvas");
+    vertices = [
+        // M의 첫번째 일직선 작대기
+        // front
+        [-0.9199999999999999, -0.8, 0.0],
+        [-0.9199999999999999, -0.3999999999999999, 0.0],
+        [-0.880109375, -0.8, 0.0],
+        [-0.9199999999999999, -0.3999999999999999, 0.0],
+        [-0.880109375, -0.3999999999999999, 0.0],
+        [-0.880109375, -0.8, 0.0],
+        // back
+        [-0.9199999999999999, -0.8, 0.1],
+        [-0.9199999999999999, -0.3999999999999999, 0.1],
+        [-0.880109375, -0.8, 0.1],
+        [-0.9199999999999999, -0.3999999999999999, 0.1],
+        [-0.880109375, -0.3999999999999999, 0.1],
+        [-0.880109375, -0.8, 0.1],
+        // surface x  // 동동다 다다동 011 100 
+        [-0.9199999999999999, -0.8, 0.0],
+        [-0.9199999999999999, -0.8, 0.1],
+        [-0.9199999999999999, -0.3999999999999999, 0.1],
+        [-0.9199999999999999, -0.3999999999999999, 0.1],
+        [-0.9199999999999999, -0.3999999999999999, 0.0],
+        [-0.9199999999999999, -0.8, 0.0],
+        [-0.880109375, -0.8, 0.0],
+        [-0.880109375, -0.8, 0.1],
+        [-0.880109375, -0.3999999999999999, 0.1],
+        [-0.880109375, -0.3999999999999999, 0.1],
+        [-0.880109375, -0.3999999999999999, 0.0],
+        [-0.880109375, -0.8, 0.0],
+        // surface y
+        [-0.880109375, -0.8, 0.0],
+        [-0.880109375, -0.8, 0.1],
+        [-0.9199999999999999, -0.8, 0.1],
+        [-0.9199999999999999, -0.8, 0.1],
+        [-0.9199999999999999, -0.8, 0.0],
+        [-0.880109375, -0.8, 0.0],
+        [-0.9199999999999999, -0.3999999999999999, 0.0],
+        [-0.9199999999999999, -0.3999999999999999, 0.1],
+        [-0.880109375, -0.3999999999999999, 0.1],
+        [-0.880109375, -0.3999999999999999, 0.1],
+        [-0.880109375, -0.3999999999999999, 0.0],
+        [-0.9199999999999999, -0.3999999999999999, 0.0],
 
-  gl = WebGLUtils.setupWebGL(canvas);
-  if (!gl) {
-    alert("WebGL isn't available");
-  }
+        // M의 첫번째 대각선 작대기
+        // 앞면
+        [-0.72, -0.8, 0.0],
+        [-0.9199999999999999, -0.3999999999999999, 0.0],
+        [-0.76, -0.8, 0.0],
+        [-0.880109375, -0.3999999999999999, 0.0],
+        [-0.9199999999999999, -0.3999999999999999, 0.0],
+        [-0.72, -0.8, 0.0],
+        // 뒷면
+        [-0.72, -0.8, 0.1],
+        [-0.9199999999999999, -0.3999999999999999, 0.1],
+        [-0.76, -0.8, 0.1],
+        [-0.880109375, -0.3999999999999999, 0.1],
+        [-0.9199999999999999, -0.3999999999999999, 0.1],
+        [-0.72, -0.8, 0.1],
+        // surface // 동동다 다다동 011 100
+        [-0.72, -0.8, 0.0],
+        [-0.72, -0.8, 0.1],
+        [-0.9199999999999999, -0.3999999999999999, 0.1],
+        [-0.9199999999999999, -0.3999999999999999, 0.1],
+        [-0.9199999999999999, -0.3999999999999999, 0.0],
+        [-0.72, -0.8, 0.0],
+        [-0.880109375, -0.3999999999999999, 0.0],
+        [-0.880109375, -0.3999999999999999, 0.1],
+        [-0.76, -0.8, 0.1],
+        [-0.76, -0.8, 0.1],
+        [-0.76, -0.8, 0.0],
+        [-0.880109375, -0.3999999999999999, 0.0],
+    
+        // M의 두번째 대각선 작대기
+        // 앞면
+        [-0.72, -0.8, 0.0],
+        [-0.6, -0.3999999999999999, 0.0],
+        [-0.76, -0.8, 0.0],
+        [-0.6, -0.3999999999999999, 0.0],
+        [-0.6399999999999999, -0.3999999999999999, 0.0],
+        [-0.76, -0.8, 0.0],
+        // 뒷면
+        [-0.72, -0.8, 0.1],
+        [-0.6, -0.3999999999999999, 0.1],
+        [-0.76, -0.8, 0.1],
+        [-0.6, -0.3999999999999999, 0.1],
+        [-0.6399999999999999, -0.3999999999999999, 0.1],
+        [-0.76, -0.8, 0.1],
+        // surface
+        [-0.76, -0.8, 0.0],
+        [-0.76, -0.8, 0.1],
+        [-0.6, -0.3999999999999999, 0.1],
+        [-0.6, -0.3999999999999999, 0.1],
+        [-0.6, -0.3999999999999999, 0.0],
+        [-0.76, -0.8, 0.0],
+        [-0.72, -0.8, 0.0],
+        [-0.72, -0.8, 0.1],
+        [-0.6399999999999999, -0.3999999999999999, 0.1],
+        [-0.6399999999999999, -0.3999999999999999, 0.1],
+        [-0.6399999999999999, -0.3999999999999999, 0.0],
+        [-0.72, -0.8, 0.0],
 
-  var vertices = [];
+        // M의 두번째 일직선 작대기
+        // 앞면
+        [-0.6399999999999999, -0.8, 0.0],
+        [-0.6399999999999999, -0.3999999999999999, 0.0],
+        [-0.6, -0.8, 0.0],
+        [-0.6399999999999999, -0.3999999999999999, 0.0],
+        [-0.6, -0.3999999999999999, 0.0],
+        [-0.6, -0.8, 0.0],
+        // 뒷면
+        [-0.6399999999999999, -0.8, 0.1],
+        [-0.6399999999999999, -0.3999999999999999, 0.1],
+        [-0.6, -0.8, 0.1],
+        [-0.6399999999999999, -0.3999999999999999, 0.1],
+        [-0.6, -0.3999999999999999, 0.1],
+        [-0.6, -0.8, 0.1],
+        // surface x
+        [-0.6399999999999999, -0.3999999999999999, 0.0],
+        [-0.6399999999999999, -0.3999999999999999, 0.1],
+        [-0.6399999999999999, -0.8, 0.1],
+        [-0.6399999999999999, -0.8, 0.1],
+        [-0.6399999999999999, -0.8, 0.0],
+        [-0.6399999999999999, -0.3999999999999999, 0.0],
+        [-0.6, -0.8, 0.0],
+        [-0.6, -0.3999999999999999, 0.0],
+        [-0.6, -0.8, 0.0],
+        [-0.6, -0.8, 0.1],
+        [-0.6, -0.3999999999999999, 0.1],
+        [-0.6, -0.8, 0.1],
+        // surface y
+        [-0.6, -0.8, 0.0],
+        [-0.6, -0.8, 0.1],
+        [-0.6399999999999999, -0.8, 0.1],
+        [-0.6399999999999999, -0.8, 0.1],
+        [-0.6399999999999999, -0.8, 0.0],
+        [-0.6, -0.8, 0.0],
+        [-0.6399999999999999, -0.3999999999999999, 0.0],
+        [-0.6399999999999999, -0.3999999999999999, 0.1],
+        [-0.6, -0.3999999999999999, 0.1],
+        [-0.6, -0.3999999999999999, 0.1],
+        [-0.6, -0.3999999999999999, 0.0],
+        [-0.6399999999999999, -0.3999999999999999, 0.0],
+        
+        // J의 작대기
+        // 앞면
+        [-0.11875000000000002, -0.35, 0.0],
+        [-0.11875000000000002, -0.7265625, 0.0],
+        [-0.06888671874999996, -0.35, 0.0],
+        [-0.11875000000000002, -0.7265625, 0.0],
+        [-0.06888671874999996, -0.7265625, 0.0],
+        [-0.06888671874999996, -0.35, 0.0],
+        // 뒷면
+        [-0.11875000000000002, -0.35, 0.1],
+        [-0.11875000000000002, -0.7265625, 0.1],
+        [-0.06888671874999996, -0.35, 0.1],
+        [-0.11875000000000002, -0.7265625, 0.1],
+        [-0.06888671874999996, -0.7265625, 0.1],
+        [-0.06888671874999996, -0.35, 0.1],
+        
+        // surface x
+        [-0.11875000000000002, -0.7265625, 0.0],
+        [-0.11875000000000002, -0.7265625, 0.1],
+        [-0.11875000000000002, -0.35, 0.1],
+        [-0.11875000000000002, -0.35, 0.1],
+        [-0.11875000000000002, -0.35, 0.0],
+        [-0.11875000000000002, -0.7265625, 0.0],
+        [-0.06888671874999996, -0.35, 0.0],
+        [-0.06888671874999996, -0.35, 0.1],
+        [-0.06888671874999996, -0.7265625, 0.1],
+        [-0.06888671874999996, -0.7265625, 0.1],
+        [-0.06888671874999996, -0.7265625, 0.0],
+        [-0.06888671874999996, -0.35, 0.0],
+        // surfcae y
+        [-0.06888671874999996, -0.35, 0.0],
+        [-0.06888671874999996, -0.35, 0.1],
+        [-0.11875000000000002, -0.35, 0.1],
+        [-0.11875000000000002, -0.35, 0.1],
+        [-0.11875000000000002, -0.35, 0.0],
+        [-0.06888671874999996, -0.35, 0.0],
+        [-0.11875000000000002, -0.7265625, 0.0],
+        [-0.11875000000000002, -0.7265625, 0.1],
+        [-0.06888671874999996, -0.7265625, 0.1],
+        [-0.06888671874999996, -0.7265625, 0.1],
+        [-0.06888671874999996, -0.7265625, 0.0],
+        [-0.11875000000000002, -0.7265625, 0.0],
 
-  for (var key in displayed_coordinates) {
-    if (displayed_coordinates.hasOwnProperty(key)) {
-      for (var i = 0; i < displayed_coordinates[key].length; i++) {
-        vertices.push(displayed_coordinates[key][i][0] / 512.0 - 1.0);
-        vertices.push(displayed_coordinates[key][i][1] / 512.0 - 1.0);
-      }
+        
+
+        // J의 곡선
+        // 앞면
+        [-0.06874999999999998, -0.65, 0.0],
+        [-0.09375, -0.7, 0.0],
+        [-0.11875000000000002, -0.725, 0.0],
+        [-0.14375000000000004, -0.7, 0.0],
+        [-0.16874999999999996, -0.675, 0.0],
+        [-0.19374999999999998, -0.65, 0.0],
+        // 뒷면
+        [-0.06874999999999998, -0.65, 0.1],
+        [-0.09375, -0.7, 0.1],
+        [-0.11875000000000002, -0.725, 0.1],
+        [-0.14375000000000004, -0.7, 0.1],
+        [-0.16874999999999996, -0.675, 0.1],
+        [-0.19374999999999998, -0.65, 0.1],
+        // surface y
+        [-0.06874999999999998, -0.65, 0.0],
+        [-0.06874999999999998, -0.65, 0.1],
+        [-0.19374999999999998, -0.65, 0.1],
+        [-0.19374999999999998, -0.65, 0.1],
+        [-0.19374999999999998, -0.65, 0.0],
+        [-0.06874999999999998, -0.65, 0.0],
+
+        [-0.09375, -0.7, 0.0],
+        [-0.09375, -0.7, 0.1],
+        [-0.14375000000000004, -0.7, 0.1],
+        [-0.14375000000000004, -0.7, 0.1],
+        [-0.14375000000000004, -0.7, 0.0],
+        [-0.09375, -0.7, 0.0],
+
+        [-0.11875000000000002, -0.725, 0.0],
+        [-0.11875000000000002, -0.725, 0.1],
+        [-0.16874999999999996, -0.675, 0.1],
+        [-0.16874999999999996, -0.675, 0.1],
+        [-0.16874999999999996, -0.675, 0.0],
+        [-0.11875000000000002, -0.725, 0.0],
+
+        // C 상단
+        // 앞면
+        [0.6265624999999999, -0.65, 0.0],
+        [0.40156250000000004, -0.625, 0.0],
+        [0.3265625000000001, -0.5, 0.0],
+        // 뒷면
+        [0.6265624999999999, -0.65, 0.1],
+        [0.40156250000000004, -0.625, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        // surface
+        [0.6265624999999999, -0.65, 0.0],
+        [0.6265624999999999, -0.65, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.3265625000000001, -0.5, 0.0],
+        [0.6265624999999999, -0.65, 0.0],
+        [0.40156250000000004, -0.625, 0.0],
+        [0.40156250000000004, -0.625, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.3265625000000001, -0.5, 0.0],
+        [0.40156250000000004, -0.625, 0.0],
+        
+        // C 중간
+        // 앞면
+        [0.40156250000000004, -0.625, 0.0],
+        [0.3265625000000001, -0.5, 0.0],
+        [0.40156250000000004, -0.375, 0.0],
+        // 뒷면
+        [0.40156250000000004, -0.625, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.40156250000000004, -0.375, 0.1],
+        // surface
+        [0.40156250000000004, -0.625, 0.0],
+        [0.40156250000000004, -0.625, 0.1],
+        [0.40156250000000004, -0.375, 0.1],
+        [0.40156250000000004, -0.375, 0.1],
+        [0.40156250000000004, -0.375, 0.0],
+        [0.40156250000000004, -0.625, 0.0],
+        [0.40156250000000004, -0.625, 0.0],
+        [0.40156250000000004, -0.625, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.3265625000000001, -0.5, 0.0],
+        [0.40156250000000004, -0.625, 0.0],
+
+        // C 하단
+        // 앞면
+        [0.3265625000000001, -0.5, 0.0],
+        [0.40156250000000004, -0.375, 0.0],
+        [0.6265624999999999, -0.35, 0.0],
+        // 뒷면
+        [0.3265625000000001, -0.5, 0.1],
+        [0.40156250000000004, -0.375, 0.1],
+        [0.6265624999999999, -0.35, 0.1],
+        // surface
+        [0.3265625000000001, -0.5, 0.0],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.6265624999999999, -0.35, 0.1],
+        [0.6265624999999999, -0.35, 0.1],
+        [0.6265624999999999, -0.35, 0.0],
+        [0.3265625000000001, -0.5, 0.0],
+
+        [0.40156250000000004, -0.375, 0.0],
+        [0.40156250000000004, -0.375, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.3265625000000001, -0.5, 0.0],
+        [0.40156250000000004, -0.375, 0.0],
+
+        [0.40156250000000004, -0.375, 0.0],
+        [0.40156250000000004, -0.375, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.3265625000000001, -0.5, 0.1],
+        [0.3265625000000001, -0.5, 0.0],
+        [0.40156250000000004, -0.375, 0.0],
+    ];
+
+    //  Load shaders and initialize attribute buffers
+
+    var program = initShaders( gl, "vertex-shader", "fragment-shader" );
+    if (!program) { alert("Shader issue"); return; }
+    gl.useProgram( program );
+
+    //  Configure WebGL
+    //
+    gl.viewport( 0, 0, canvas.width, canvas.height );
+    gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+    gl.clearDepth(1);
+    gl.enable(gl.DEPTH_TEST);
+
+    // Load the data into the GPU
+
+    var bufferId = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, bufferId );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW );
+
+    
+    // Associate out shader variables with our data buffer
+
+    var vPosition = gl.getAttribLocation( program, "vPosition" );
+    gl.vertexAttribPointer( vPosition, 3, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vPosition );
+
+    modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
+    viewMatrixLOC = gl.getUniformLocation(program, "viewMatrix");
+    projectionMatrixLoc = gl.getUniformLocation(program, "projectionMatrix");
+    translationMatrixLOC  = gl.getUniformLocation(program, "translationMatrix");
+    initialScaleMatrixLoc = gl.getUniformLocation(program, "initialScaleMatrix");
+
+    modelMatrix = mat4();
+    viewMatrix = mat4();
+    projectionMatrix = mat4();
+    initialScaleMatrix = mat4();
+
+    projectionMatrix = perspective(45, canvas.width / canvas.height, 0.1, 100.0); // fovy, aspect, near, far
+    viewMatrix = lookAt([0, 0, 3.5], [0, 0, 0], [0, 1, 0]);
+    
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    gl.uniformMatrix4fv(viewMatrixLOC, false, flatten(viewMatrix));
+    gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
+    gl.uniformMatrix4fv(translationMatrixLOC, false, flatten(translationMatrix));
+    gl.uniformMatrix4fv(initialScaleMatrixLoc, false, flatten(initialScaleMatrix));
+
+    thetaLoc = gl.getUniformLocation(program, "theta");
+
+
+    document.getElementById("toggleRot").onclick = function(e) {
+        if (rotationSpeed == 0.0) {
+            rotationSpeed = origin_speed;
+        } else {
+            rotationSpeed = 0.0;
+        }
+    };
+
+    document.getElementById("rotX").onclick = function(e) {
+        axis = xAxis;
+        // theta[axis] += 5.0;
+    };
+    document.getElementById("rotY").onclick = function(e) {
+        axis = yAxis;
+        // theta[axis] += 5.0;
+    };
+    document.getElementById("rotZ").onclick = function(e) {
+        axis = zAxis;
+        // theta[axis] += 5.0;
+    };
+    document.getElementById("initial_distance_z").oninput = function(e) {
+        var distanceZ = 50 - parseFloat(e.target.value);
+        viewMatrix = lookAt([0, 0, distanceZ], [0, 0, 0], [0, 1, 0]);
+    };
+    
+    document.getElementById("initial_height").oninput = function(e) {
+        translateY = e.target.value / 100;
+        translationMatrix = translate(translateX, translateY, 0);
+    };
+
+    document.getElementById("initial_posx").oninput = function(e) {
+        translateX = (e.target.value / 100) - 1.0;
+        translationMatrix = translate(translateX, translateY, 0);
     }
-  }
-  // console.log(vertices);
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-  var program = initShaders(gl, "vertex-shader", "fragment-shader");
-  gl.useProgram(program);
+    document.getElementById("initial_scailing").oninput = function(e) {
+        initialScale = e.target.value;
+        initialScaleMatrix = scalem(initialScale, initialScale, initialScale);
+    }
 
-  bufferId = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
-  gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
-
-  var vPosition = gl.getAttribLocation(program, "vPosition");
-  gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(vPosition);
-
-  render();
+    render();
 };
 
-function render() {
-  gl.clear(gl.COLOR_BUFFER_BIT);
+function render()
+{
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    theta[axis] += rotationSpeed;
+    modelMatrix = rotateX(theta[xAxis]);
+    modelMatrix = mult(modelMatrix, rotateY(theta[yAxis]));
+    modelMatrix = mult(modelMatrix, rotateZ(theta[zAxis]));
 
-  // M
-  gl.drawArrays(gl.TRIANGLES, 0, 24);
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    gl.uniformMatrix4fv(viewMatrixLOC, false, flatten(viewMatrix));
+    gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
+    gl.uniformMatrix4fv(translationMatrixLOC, false, flatten(translationMatrix));
+    gl.uniformMatrix4fv(initialScaleMatrixLoc, false, flatten(initialScaleMatrix));
 
-  // J
-  gl.drawArrays(gl.TRIANGLES, 24, 6);
-  gl.drawArrays(gl.TRIANGLE_FAN, 30, 6);
+    //  gl.drawArrays(gl.TRIANGLES, 0, vertices.length);
+    var current_ver = 0;
+    // M
+    gl.drawArrays(gl.TRIANGLES, current_ver, 120);
+    current_ver += 120;
+    // J
+    gl.drawArrays(gl.TRIANGLES, current_ver, 36);
+    current_ver += 36;
+    gl.drawArrays(gl.TRIANGLE_FAN, current_ver, 12);
+    current_ver += 12
+    gl.drawArrays(gl.TRIANGLE_FAN, current_ver, 18);
+    current_ver += 18;
+    // C
+    gl.drawArrays(gl.TRIANGLES, current_ver, 60);
+    current_ver += 60;
 
-  // C
-  gl.drawArrays(gl.TRIANGLES, 36, 9);
+    requestAnimFrame(render);
 
-  // LINES
-  gl.drawArrays(gl.LINE_LOOP, 45, 4);
-  // POINTS
-  gl.drawArrays(gl.POINTS, 49, 4);
 }

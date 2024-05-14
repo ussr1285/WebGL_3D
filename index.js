@@ -38,6 +38,11 @@ var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0); // 𝑘𝑑
 var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 ); // 𝑘𝑠
 var materialShininess = 100.0; // 𝛼: a shininess for specular term
 
+var ambientProduct = mult(lightAmbient, materialAmbient);
+var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+var specularProduct = mult(lightSpecular, materialSpecular);
+
+var program;
 
 window.onload = function init()
 {
@@ -298,7 +303,7 @@ window.onload = function init()
   ];
   //  Load shaders and initialize attribute buffers
 
-  var program = initShaders(gl, "vertex-shader", "fragment-shader");
+  program = initShaders(gl, "vertex-shader", "fragment-shader");
   if (!program) {
     alert("Shader issue");
     return;
@@ -311,7 +316,6 @@ window.onload = function init()
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1);
   gl.enable(gl.DEPTH_TEST);
-  
 
   // Load the data into the GPU
 
@@ -423,7 +427,13 @@ function render()
     gl.uniformMatrix4fv(translationMatrixLOC, false, flatten(translationMatrix));
     gl.uniformMatrix4fv(initialScaleMatrixLoc, false, flatten(initialScaleMatrix));
 
-    //  gl.drawArrays(gl.TRIANGLES, 0, vertices.length);
+    gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(ambientProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), flatten(specularProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
+    
+    gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
+
     var current_ver = 0;
     // M
     gl.drawArrays(gl.TRIANGLES, current_ver, 120);

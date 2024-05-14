@@ -7,6 +7,7 @@
 
     <script id="vertex-shader" type="x-shader/x-vertex">
         attribute vec4 vPosition;
+        
         uniform mat4 modelMatrix;
         uniform mat4 projectionMatrix;
         uniform mat4 viewMatrix;
@@ -32,46 +33,65 @@ main()
     <script type="text/javascript" src="./Common/initShaders.js"></script>
     <script type="text/javascript" src="./Common/MV.js"></script>
     <script type="text/javascript" src="./index.js"></script>
+
+    <style>
+        body {
+            display: flex; /* Flexbox 사용 */
+            flex-direction: row; /* 요소들을 행 방향으로 배치 */
+            align-items: flex-start; /* 요소들을 컨테이너의 시작 위치에 정렬 */
+        }
+        #gl-canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px; /* 오른쪽에 공간 추가 */
+        }
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+        }
+        .controls-row {
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 
 <body>
-    <canvas id="gl-canvas" width="1024" height="1024">
-        Oops ... your browser doesn't support the HTML5 canvas element
-    </canvas>
-    <div>
-        <div>
-            <button id="toggleRot">
-                Toggle Rotation
-            </button>
-            <button id="rotX">
-                Change Rotation direction about X axis
-            </button>
-            <button id="rotY">
-                Change Rotation direction about Y axis
-            </button>
-            <button id="rotZ">
-                Change Rotation direction about Z axis
-            </button>
+    <div id="gl-canvas-container">
+        <canvas id="gl-canvas" width="1024" height="1024">
+            Oops ... your browser doesn't support the HTML5 canvas element
+        </canvas>
+    </div>
+    <div class="controls-container">
+        <div class="controls-row">
+            <button id="viewFromFront">앞에서 보기</button>
+            <button id="viewFromRightSide">오른쪽 측면에서 보기</button>
+            <button id="viewFromLeftSide">왼쪽쪽 측면에서 보기</button>
+            <button id="viewFromUp">위에서 보기</button>
         </div>
-        <div>
-            <div>
-                <label for="initial_height">이니셜 전체 높이 조절: </label>
-                <input type="range" id="initial_height" min="0" max="500" value="0">
-            </div>
-            <div>
-                <label for="initial_posx">이니셜 좌우 이동: </label>
-                <input type="range" id="initial_posx" min="0" max="200" value="0">
-            </div>
-            <div>
-                <label for="initial_scailing">이니셜 스케일링: </label>
-                <input type="range" id="initial_scailing" min="1" max="8" value="1">
-            </div>
-            <div>
-                <label for="initial_distance_z">distanceZ(camera distance): </label>
-                <input type="range" id="initial_distance_z" min="1" max="48" value="48">
-            </div>
+        <div class="controls-row">
+            <button id="toggleRot">Toggle Rotation</button>
+            <button id="rotX">Change Rotation direction about X axis</button>
+            <button id="rotY">Change Rotation direction about Y axis</button>
+            <button id="rotZ">Change Rotation direction about Z axis</button>
+        </div>
+        <div class="controls-row">
+            <label for="initial_height">이니셜 전체 높이 조절: </label>
+            <input type="range" id="initial_height" min="-500" max="500" value="0">
+        </div>
+        <div class="controls-row">
+            <label for="initial_posx">이니셜 좌우 이동: </label>
+            <input type="range" id="initial_posx" min="0" max="200" value="0">
+        </div>
+        <div class="controls-row">
+            <label for="initial_scailing">이니셜 스케일링: </label>
+            <input type="range" id="initial_scailing" min="1" max="8" value="1">
+        </div>
+        <div class="controls-row">
+            <label for="initial_distance_z">distanceZ(camera distance): </label>
+            <input type="range" id="initial_distance_z" min="1" max="48" value="48">
         </div>
     </div>
 </body>
-
 </html>

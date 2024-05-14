@@ -13,10 +13,12 @@
         uniform mat4 viewMatrix;
         uniform mat4 translationMatrix;
         uniform mat4 initialScaleMatrix;
+
+        mat4 modelViewMatrix = viewMatrix * translationMatrix * initialScaleMatrix * modelMatrix;
         
         void main()
         {
-            gl_Position =  projectionMatrix * viewMatrix * translationMatrix * initialScaleMatrix * modelMatrix * vPosition;
+            gl_Position =  projectionMatrix * modelViewMatrix * vPosition;
         }
     </script>
 

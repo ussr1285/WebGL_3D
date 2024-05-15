@@ -14,7 +14,7 @@ var vertices;
 var normalsArray = [];
 var pointsArray = [];
 const origin_speed = 2;
-var rotationSpeed = origin_speed;
+var rotationSpeed = 0;
 var translationMatrix = translate(0, 0, 0);
 var translationMatrixLOC;
 var canvas;
@@ -366,22 +366,28 @@ window.onload = function init() {
     var normal = vec3(normal);
     normal = normalize(normal);
 
+    pointsArray.push(vertices[a]);
+    pointsArray.push(vertices[b]);
+    pointsArray.push(vertices[c]);
     normalsArray.push(normal);
     normalsArray.push(normal);
     normalsArray.push(normal);
   }
 
   function computeNormalsForTriangleFan(startOfFANVertices, endOfFANVertices) {
-    for (let i = 1; i < endOfFANVertices - 1; i++) {
+    for (let i = startOfFANVertices+1; i < endOfFANVertices - 1; i++) {
       const vec1 = subtract(vertices[i], vertices[startOfFANVertices]);
       const vec2 = subtract(vertices[i + 1], vertices[startOfFANVertices]);
 
       let normal = cross(vec1, vec2);
       normal = normalize(normal);
+      normalsArray.push(normal);
+      normalsArray.push(normal);
+      normalsArray.push(normal);
 
-      normalsArray.push(normal);
-      normalsArray.push(normal);
-      normalsArray.push(normal);
+      pointsArray.push(vertices[startOfFANVertices]);
+      pointsArray.push(vertices[i]);
+      pointsArray.push(vertices[i + 1]);
     }
   }
 
@@ -393,6 +399,7 @@ window.onload = function init() {
     i += 3;
   }
   sum_i = sum_i + i;
+
 
   i = 0;
   while (i < 30) {
@@ -415,8 +422,8 @@ window.onload = function init() {
     i += 3;
   }
   sum_i = sum_i + i;
-
-//   console.log(sum_i);
+  console.log(sum_i);
+  console.log(pointsArray.length);
 
   //  Load shaders and initialize attribute buffers
   program = initShaders(gl, "vertex-shader", "fragment-shader");
@@ -445,7 +452,7 @@ window.onload = function init() {
 
   var vBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
 
   var vPosition = gl.getAttribLocation(program, "vPosition");
   gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
@@ -581,10 +588,10 @@ function render() {
   gl.drawArrays(gl.TRIANGLES, current_ver, 30);
   current_ver += 30;
 
-  gl.drawArrays(gl.TRIANGLE_FAN, current_ver, 12);
-  current_ver += 12;
-  gl.drawArrays(gl.TRIANGLE_FAN, current_ver, 18);
-  current_ver += 18;
+  gl.drawArrays(gl.TRIANGLE_FAN, current_ver, 30);
+  current_ver += 30;
+  gl.drawArrays(gl.TRIANGLE_FAN, current_ver, 48);
+  current_ver += 48;
   // C
   gl.drawArrays(gl.TRIANGLES, current_ver, 66);
   current_ver += 66;

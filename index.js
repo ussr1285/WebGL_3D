@@ -11,6 +11,8 @@ var modelMatrixLoc, viewMatrixLOC, projectionMatrixLoc;
 
 var thetaLoc;
 var vertices;
+var normalsArray = [];
+var pointsArray = [];
 const origin_speed = 2;
 var rotationSpeed = origin_speed;
 var translationMatrix = translate(0, 0, 0);
@@ -27,15 +29,15 @@ var initialScale = 1;
 var initialScaleMatrix;
 var initialScaleMatrixLoc;
 
-var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 ); // directional light
+var lightPosition = vec4(1.0, 1.0, 1.0, 0.0); // directional light
 
-var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 ); // 𝐿𝑎
-var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 ); // 𝐿𝑑
-var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 ); // 𝐿𝑠
- 
-var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 ); // 𝑘𝑎
-var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0); // 𝑘𝑑
-var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 ); // 𝑘𝑠
+var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0); // 𝐿𝑎
+var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0); // 𝐿𝑑
+var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0); // 𝐿𝑠
+
+var materialAmbient = vec4(1.0, 0.0, 1.0, 1.0); // 𝑘𝑎
+var materialDiffuse = vec4(1.0, 0.8, 0.0, 1.0); // 𝑘𝑑
+var materialSpecular = vec4(1.0, 0.8, 0.0, 1.0); // 𝑘𝑠
 var materialShininess = 100.0; // 𝛼: a shininess for specular term
 
 var ambientProduct = mult(lightAmbient, materialAmbient);
@@ -44,8 +46,7 @@ var specularProduct = mult(lightSpecular, materialSpecular);
 
 var program;
 
-window.onload = function init()
-{
+window.onload = function init() {
   canvas = document.getElementById("gl-canvas");
 
   gl = WebGLUtils.setupWebGL(canvas);
@@ -54,7 +55,7 @@ window.onload = function init()
   }
 
   vertices = [
-     // M의 첫번째 일직선 작대기
+    // M의 첫번째 일직선 작대기
     // front
     [-0.9199999999999999, -0.35000000000000003, 0.0],
     [-0.9199999999999999, 0.0500000000000001, 0.0],
@@ -69,7 +70,7 @@ window.onload = function init()
     [-0.9199999999999999, 0.0500000000000001, 0.1],
     [-0.880109375, 0.0500000000000001, 0.1],
     [-0.880109375, -0.35000000000000003, 0.1],
-    // surface x  // 동동다 다다동 011 100 
+    // surface x  // 동동다 다다동 011 100
     [-0.9199999999999999, -0.35000000000000003, 0.0],
     [-0.9199999999999999, -0.35000000000000003, 0.1],
     [-0.9199999999999999, 0.0500000000000001, 0.1],
@@ -331,6 +332,70 @@ window.onload = function init()
     [0.40156250000000004, 0.07500000000000001, 0.0],
   ];
 
+  function triangle(a, b, c) {
+    // 삼각형의 두 변 벡터를 계산합니다.
+    var t1 = subtract(vertices[b], vertices[a]); // 벡터 AB
+    var t2 = subtract(vertices[c], vertices[a]); // 벡터 AC
+
+    // t1과 t2 벡터의 외적을 통해 노말 벡터를 계산합니다.
+    var normal = cross(t1, t2); // 두 벡터의 외적을 사용해 노말 벡터를 구함
+    var normal = vec3(normal); // vec3 함수를 사용하여 3차원 벡터로 변환
+    normal = normalize(normal); // 노말 벡터를 정규화합니다.
+
+    // 삼각형의 각 정점에 노말 벡터를 저장합니다.
+    normalsArray.push(normal); // 계산된 노말 벡터를 노말 배열에 추가
+    normalsArray.push(normal); // 노말 벡터
+    normalsArray.push(normal); // 노말 벡터
+  }
+
+  function computeNormalsForTriangleFan(startOfFANVertices, endOfFANVertices) {
+    // 팬의 중심점
+    for (let i = 1; i < endOfFANVertices - 1; i++) {
+      const vec1 = subtract(vertices[i], vertices[startOfFANVertices]);
+      const vec2 = subtract(vertices[i + 1], vertices[startOfFANVertices]);
+
+      let normal = cross(vec1, vec2);
+      normal = normalize(normal); // 노말 벡터 정규화
+
+      // 각 삼각형에 대한 노말 벡터 저장
+      normalsArray.push(normal);
+      normalsArray.push(normal);
+      normalsArray.push(normal);
+    }
+  }
+
+  let sum_i = 0;
+  let i = 0;
+  
+  while (i < 120) {
+    triangle(i, i + 1, i + 2);
+    i += 3;
+  }
+  sum_i = sum_i + i;
+
+  i = 0;
+  while (i < 36) {
+    triangle(sum_i+i, sum_i+i + 1, sum_i+i + 2);
+    i += 3;
+  }
+  sum_i = sum_i + i;
+
+  i = 12;
+  computeNormalsForTriangleFan(sum_i, sum_i + i);
+  sum_i = sum_i + i;
+
+  i = 18;
+  computeNormalsForTriangleFan(sum_i, sum_i + i);
+  sum_i = sum_i + i;
+
+  i = 0;
+  while (i < 60) {
+    triangle(sum_i+i, sum_i+i + 1, sum_i+i + 2);
+    i += 3;
+  }
+  sum_i = sum_i + i;
+
+//   console.log(sum_i);
 
   //  Load shaders and initialize attribute buffers
   program = initShaders(gl, "vertex-shader", "fragment-shader");
@@ -351,13 +416,25 @@ window.onload = function init()
 
   var nBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW); //   gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
+
+  var vNormal = gl.getAttribLocation(program, "vNormal");
+  gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(vNormal);
+
+  var vBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
+
+  var vPosition = gl.getAttribLocation(program, "vPosition");
+  gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0); //   gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(vPosition);
 
   // Associate out shader variables with our data buffer
 
-  var vPosition = gl.getAttribLocation(program, "vPosition");
-  gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(vPosition);
+  //   var vPosition = gl.getAttribLocation(program, "vPosition");
+  //   gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
+  //   gl.enableVertexAttribArray(vPosition);
 
   modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
   viewMatrixLOC = gl.getUniformLocation(program, "viewMatrix");
@@ -443,42 +520,56 @@ window.onload = function init()
   render();
 };
 
-function render()
-{
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    theta[axis] += rotationSpeed;
-    modelMatrix = rotateX(theta[xAxis]);
-    modelMatrix = mult(modelMatrix, rotateY(theta[yAxis]));
-    modelMatrix = mult(modelMatrix, rotateZ(theta[zAxis]));
+function render() {
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  theta[axis] += rotationSpeed;
+  modelMatrix = rotateX(theta[xAxis]);
+  modelMatrix = mult(modelMatrix, rotateY(theta[yAxis]));
+  modelMatrix = mult(modelMatrix, rotateZ(theta[zAxis]));
 
-    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
-    gl.uniformMatrix4fv(viewMatrixLOC, false, flatten(viewMatrix));
-    gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
-    gl.uniformMatrix4fv(translationMatrixLOC, false, flatten(translationMatrix));
-    gl.uniformMatrix4fv(initialScaleMatrixLoc, false, flatten(initialScaleMatrix));
+  gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+  gl.uniformMatrix4fv(viewMatrixLOC, false, flatten(viewMatrix));
+  gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
+  gl.uniformMatrix4fv(translationMatrixLOC, false, flatten(translationMatrix));
+  gl.uniformMatrix4fv(
+    initialScaleMatrixLoc,
+    false,
+    flatten(initialScaleMatrix)
+  );
 
-    gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(ambientProduct));
-    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
-    gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), flatten(specularProduct));
-    gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
-    
-    gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
+  gl.uniform4fv(
+    gl.getUniformLocation(program, "ambientProduct"),
+    flatten(ambientProduct)
+  );
+  gl.uniform4fv(
+    gl.getUniformLocation(program, "diffuseProduct"),
+    flatten(diffuseProduct)
+  );
+  gl.uniform4fv(
+    gl.getUniformLocation(program, "specularProduct"),
+    flatten(specularProduct)
+  );
+  gl.uniform4fv(
+    gl.getUniformLocation(program, "lightPosition"),
+    flatten(lightPosition)
+  );
 
-    var current_ver = 0;
-    // M
-    gl.drawArrays(gl.TRIANGLES, current_ver, 120);
-    current_ver += 120;
-    // J
-    gl.drawArrays(gl.TRIANGLES, current_ver, 36);
-    current_ver += 36;
-    gl.drawArrays(gl.TRIANGLE_FAN, current_ver, 12);
-    current_ver += 12
-    gl.drawArrays(gl.TRIANGLE_FAN, current_ver, 18);
-    current_ver += 18;
-    // C
-    gl.drawArrays(gl.TRIANGLES, current_ver, 60);
-    current_ver += 60;
+  gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
 
-    requestAnimFrame(render);
+  var current_ver = 0;
+  // M
+  gl.drawArrays(gl.TRIANGLES, current_ver, 120);
+  current_ver += 120;
+  // J
+  gl.drawArrays(gl.TRIANGLES, current_ver, 36);
+  current_ver += 36;
+  gl.drawArrays(gl.TRIANGLE_FAN, current_ver, 12);
+  current_ver += 12;
+  gl.drawArrays(gl.TRIANGLE_FAN, current_ver, 18);
+  current_ver += 18;
+  // C
+  gl.drawArrays(gl.TRIANGLES, current_ver, 60);
+  current_ver += 60;
 
+  requestAnimFrame(render);
 }

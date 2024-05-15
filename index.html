@@ -46,10 +46,13 @@
     </script>
 
     <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+        varying vec4 fColor;
         void main()
         {
-            gl_FragColor = vec4( 0.06640625, 0.24609375, 0.80859375, 1.0 );
+            gl_FragColor = fColor;
         }
+
     </script>
 
     <script type="text/javascript" src="./Common/webgl-utils.js"></script>

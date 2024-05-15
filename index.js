@@ -13,8 +13,8 @@ var thetaLoc;
 var vertices;
 var normalsArray = [];
 var pointsArray = [];
-const origin_speed = 2;
-var rotationSpeed = 0;
+const origin_speed = 1;
+var rotationSpeed = origin_speed;
 var translationMatrix = translate(0, 0, 0);
 var translationMatrixLOC;
 var canvas;
@@ -32,7 +32,6 @@ var initialScaleMatrixLoc;
 
 
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0); // directional light
-
 
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0); // 𝐿𝑎
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0); // 𝐿𝑑
@@ -578,6 +577,10 @@ function render() {
     flatten(lightPosition)
   );
 
+  gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(ambientProduct));
+  gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+  gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), flatten(specularProduct));
+  gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
   gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
 
   var current_ver = 0;
@@ -595,6 +598,8 @@ function render() {
   // C
   gl.drawArrays(gl.TRIANGLES, current_ver, 66);
   current_ver += 66;
+
+
 
 //   console.log(current_ver)
   requestAnimFrame(render);
